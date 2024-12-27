@@ -1,20 +1,26 @@
-from flask import Flask, request, jsonify
+import streamlit as st
 import cv2
 from keras.models import model_from_json
 import numpy as np
-
-app = Flask(__name__)
+from PIL import Image
 
 # Load model
-json_file = open("emotiondetector.json", "r")
-model_json = json_file.read()
-json_file.close()
-model = model_from_json(model_json)
-model.load_weights("emotiondetector.h5")
+@st.cache_resource
+def load_model():
+    with open("emotiondetector.json", "r") as json_file:
+        model_json = json_file.read()
+    model = model_from_json(model_json)
+    model.load_weights("emotiondetector.h5")
+    return model
 
 # Load Haar cascade
-haar_file = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-face_cascade = cv2.CascadeClassifier(haar_file)
+@st.cache_resource
+def load_cascade():
+    haar_file = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+    return cv2.CascadeClassifier(haar_file)
+
+model = load_model()
+face_cascade = load_cascade()
 
 labels = {0: 'angry', 1: 'disgust', 2: 'fear', 3: 'happy', 4: 'neutral', 5: 'sad', 6: 'surprise'}
 
@@ -23,26 +29,36 @@ def extract_features(image):
     feature = feature.reshape(1, 48, 48, 1)
     return feature / 255.0
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        file = request.files['image']
-        file.save("temp.jpg")
-        image = cv2.imread("temp.jpg", cv2.IMREAD_GRAYSCALE)
-        faces = face_cascade.detectMultiScale(image, 1.3, 5)
-        
-        if len(faces) == 0:
-            return jsonify({"error": "No face detected"})
-        
-        for (p, q, r, s) in faces:
-            face = image[q:q + s, p:p + r]
-            face = cv2.resize(face, (48, 48))
-            img = extract_features(face)
-            pred = model.predict(img)
-            prediction_label = labels[pred.argmax()]
-            return jsonify({"emotion": prediction_label})
-    except Exception as e:
-        return jsonify({"error": str(e)})
+st.title("Face Emotion Detection App")
+st.write("Upload a grayscale image to detect emotions.")
 
-if __name__ == "__main__":
-    app.run(debug=True)
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    try:
+        # Load and preprocess the image
+        image = Image.open(uploaded_file).convert('L')
+        image_np = np.array(image)
+
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+
+        # Detect faces
+        faces = face_cascade.detectMultiScale(image_np, 1.3, 5)
+
+        if len(faces) == 0:
+            st.error("No face detected in the image.")
+        else:
+            for (p, q, r, s) in faces:
+                face = image_np[q:q + s, p:p + r]
+                face_resized = cv2.resize(face, (48, 48))
+                img = extract_features(face_resized)
+
+                # Make prediction
+                pred = model.predict(img)
+                prediction_label = labels[pred.argmax()]
+
+                # Display results
+                st.success(f"Detected Emotion: {prediction_label}")
+                st.image(face_resized, caption="Detected Face", use_column_width=False)
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
