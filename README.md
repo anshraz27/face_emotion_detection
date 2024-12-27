@@ -9,40 +9,6 @@ This repository contains a project that implements face emotion detection using 
 - Visualization of detected emotions.
 - Implementation in Python using Jupyter Notebook.
 
-## Installation
-
-Follow these steps to set up the project:
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/anshraz27/face_emotion_detection.git
-   cd face_emotion_detection
-   ```
-
-2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Ensure that you have Jupyter Notebook installed. If not, install it using:
-   ```bash
-   pip install notebook
-   ```
-
-## Dataset
-
-This project uses a facial emotion dataset to train and test the model. You can use the [FER2013 dataset](https://www.kaggle.com/msambare/fer2013) as an example. Download the dataset and place it in the project directory under a folder named `data`.
-
-## Usage
-
-1. Open the Jupyter Notebook:
-   ```bash
-   jupyter notebook Face_emotion_detection.ipynb
-   ```
-
-2. Run the cells step-by-step to preprocess the data, train the model, and visualize the results.
-
-3. Modify or extend the notebook as per your requirements.
 
 ## Model Architecture
 
